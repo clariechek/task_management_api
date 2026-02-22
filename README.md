@@ -68,15 +68,39 @@ A FastAPI Task Management API with filtering, tagging and deadlines.
 
 # Database and performance
 ## Indexing
-  - 
+| | Index | Table | Column(s) | Rationale |
+| --- |-------|-------|-----------|-----------|
+| 1 | idx_tasks_priority | tasks | priority | Frequent filtering |
+| 2 | idx_tasks_completed | tasks | completed | Frequent filtering |
+| 3 | idx_tasks_is_deleted | tasks | is_deleted | Soft delete queries |
+| 4 | idx_tags_name | tags | name | Tag lookups |
 
 ## Schema
 ### tasks
+| | Column | Type | Constraints | Description |
+| --- |--------|------|-------------|-------------|
+| 1 | id | SERIAL | PRIMARY KEY | Unique identifier |
+| 2 | title | VARCHAR(200) | NOT NULL | Task title |
+| 3 | description | TEXT | | Optional description |
+| 4 | priority | INTEGER | NOT NULL, CHECK (1-5) | Priority level with highest being 5 |
+| 5 | due_date | DATE | NOT NULL | Task deadline in ISO format (YYYY-MM-DD) |
+| 6 | completed | BOOLEAN | DEFAULT FALSE | Completion status |
+| 7 | is_deleted | BOOLEAN | DEFAULT FALSE | Soft delete flag |
+| 8 | created_at | TIMESTAMP | DEFAULT NOW() | Creation timestamp |
+| 9 | updated_at | TIMESTAMP | | Last modification |
 
 ### tags
+| | Column | Type | Constraints | Description |
+| --- |--------|------|-------------|-------------|
+| 1 | id | SERIAL | PRIMARY KEY | Unique identifier |
+| 2 | name | VARCHAR(50) | UNIQUE, NOT NULL | Tag name |
 
 ### task_tags
-
+| | Column | Type | Constraints | Description |
+| --- |--------|------|-------------|-------------|
+| 1 | task_id | INTEGER | FK → tasks(id) | Reference to task |
+| 2 | tag_id | INTEGER | FK → tags(id) | Reference to tag |
+| 3 | | | PRIMARY KEY (task_id, tag_id) | Composite key |
 
 # Testing
 
