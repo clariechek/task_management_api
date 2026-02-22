@@ -23,6 +23,24 @@ class TaskCreate(BaseModel):
         if v < date.today():
             raise ValueError("Due date cannot be in the past")
         return v
+    
+    @field_validator("tags")
+    @classmethod
+    def validate_tags(cls, v: Optional[list[str]]) -> Optional[list[str]]:
+        """Validate the tags list. Normalize the tag names to lowercase and strip whitespace.
+        - v: The tags list to validate.
+        - Returns: The validated tags list.
+        - Raises: ValueError if the tag names are empty.
+        """
+        if v is None:
+            return v
+        validated = []
+        for tag in v:
+            normalized_name = tag.lower().strip()
+            if not normalized_name:
+                raise ValueError("Tag names cannot be empty")
+            validated.append(normalized_name)
+        return validated
 
     class Config:
         """
@@ -57,6 +75,24 @@ class TaskUpdate(BaseModel):
         if v is not None and v < date.today():
             raise ValueError("Due date cannot be in the past")
         return v
+    
+    @field_validator("tags")
+    @classmethod
+    def validate_tags(cls, v: Optional[list[str]]) -> Optional[list[str]]:
+        """Validate the tags list. Normalize the tag names to lowercase and strip whitespace.
+        - v: The tags list to validate.
+        - Returns: The validated tags list.
+        - Raises: ValueError if the tag names are empty.
+        """
+        if v is None:
+            return v
+        validated = []
+        for tag in v:
+            normalized_name = tag.lower().strip()
+            if not normalized_name:
+                raise ValueError("Tag names cannot be empty")
+            validated.append(normalized_name)
+        return validated
 
 
 class TaskResponse(BaseModel):
