@@ -3,11 +3,63 @@ A FastAPI Task Management API with filtering, tagging and deadlines.
 
 # Prerequisites
 - Python 3.10+
-- Docker
+- Docker and Docker Compose
 
 # Setup and run
 
+## Quick Start (Docker)
+Run the application and PostgreSQL database with a single command:
+```bash
+docker-compose up --build
+```
+
+The API will be available at:
+- **API**: http://localhost:8000
+- **Swagger Docs**: http://localhost:8000/docs
+
+To stop the services:
+```bash
+docker-compose down
+```
+
+To stop and remove all data:
+```bash
+docker-compose down -v
+```
+
+## Local development (without Docker)
+
+1. Create a virtual environment with Python 3.11
+```bash
+python3.11 -m venv venv
+source venv/bin/activate
+```
+
+2. Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+3. Set up PostgreSQL and configure the connection:
+```bash
+export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/taskdb"
+```
+
+4. Run the application:
+```bash
+uvicorn app.main:app --reload
+```
+
 # API overview
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | Health check |
+| POST | `/tasks` | Create a new task |
+| GET | `/tasks` | List tasks with filtering and pagination |
+| GET | `/tasks/{id}` | Get a single task |
+| PATCH | `/tasks/{id}` | Partially update a task |
+| DELETE | `/tasks/{id}` | Soft delete a task |
+
 
 # Design decisions
 ## Tagging (many-to-many)
@@ -102,6 +154,77 @@ A FastAPI Task Management API with filtering, tagging and deadlines.
 | 2 | tag_id | INTEGER | FK → tags(id) | Reference to tag |
 | 3 | | | PRIMARY KEY (task_id, tag_id) | Composite key |
 
+Note: Composite key is simpler to use however can be harder to reference externally. A surrogate primary key might be better for production enhancement.
+
 # Testing
+Run the test suite using pytest:
+
+```bash
+# Setup virtual environment
+python3.11 -m venv venv 
+source venv/bin/activate
+
+# Install test dependencies
+pip install -r requirements.txt
+
+# Run all tests
+pytest
+
+# Run with verbose output
+pytest -v
+
+# Run with coverage report
+pytest --cov=app --cov-report=html
+```
+
+The test suite covers:
+- Task creation (success and validation failures)
+- Filtering by priority, completion status, and tags
+- Pagination
+- Partial updates (PATCH)
+- Edge cases and error handling
+
+**Note**: 
+- Tests use SQLite in-memory database for speed and isolation.
+- Test cases for getting task by id and soft delete behavior to be implemented.
+
 
 # Production readiness improvements
+The following enhancements would be recommended for production deployment:
+
+## Security
+- **Secret Management**: Move credentials to a secrets manager. Never commit secrets to version control.
+- **Authentication & Authorization**: Add JWT or OAuth2 authentication
+- **Rate Limiting**: Implement rate limiting to prevent abuse
+- **Input Sanitization**: Additional input validation and sanitization
+- **CORS Configuration**: Configure allowed origins for web clients
+- **HTTPS**: Enforce HTTPS in production
+
+## Data Integrity
+- **Optimistic Locking**: Add version field to prevent lost updates (ie. when 2 users update the same task - race condition)
+- **Transaction Isolation**: Configure appropriate isolation levels for critical operations
+- **Retry Logic**: Handle deadlocks and transient failures with exponential backoff
+- **Idempotency**: Ensure repeated requests don't cause duplicate effects
+
+## Performance
+- **Caching**: Add Redis caching for frequently accessed data
+- **Connection Pooling**: Configure database connection pooling (e.g., PgBouncer)
+- **Query Optimization**: Add composite indexes for common filter combinations
+- **Async Database Operations**: Use async SQLAlchemy for non-blocking I/O
+
+## Observability
+- **Logging**: Structured logging with correlation IDs
+- **Metrics**: Prometheus metrics (eg. request counts, response times, error rates, database query durations) for monitoring
+- **Distributed Tracing**: OpenTelemetry integration to trace where time is spent across all services in request chain
+
+## Infrastructure
+- **Database Migrations**: Use Alembic for schema versioning to prevent data loss when schema changes
+- **Environment Configuration**: Use pydantic-settings for environment management
+- **Container Orchestration**: Kubernetes manifests for scaling
+- **CI/CD Pipeline**: Automated testing and deployment
+- **Database Backups**: Automated backup and recovery procedures
+
+## Data Management
+- **Scheduled Hard Delete**: Periodic cleanup of soft-deleted records
+- **Data Archival**: Archive old completed tasks
+- **Audit Logging**: Track all changes for compliance (eg. log all create/update/delete operations with user ID, timestamps, before/after values etc.)
