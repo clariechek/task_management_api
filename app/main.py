@@ -2,7 +2,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
-from app.database import engine, Base
+from app import database
+from app.database import Base
 from app.routers import tasks
 from app.schemas import ErrorDetail
 
@@ -10,7 +11,7 @@ from app.schemas import ErrorDetail
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Create database tables on startup."""
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=database.engine)
     yield
 
 
